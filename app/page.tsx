@@ -1,4 +1,4 @@
-// app/[colleges]/page.tsx
+
 // app/page.tsx
 "use client"
 
