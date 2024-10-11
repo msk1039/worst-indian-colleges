@@ -6,7 +6,7 @@ import "./globals.css";
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
-
+  
 export const metadata = {
   metadataBase: new URL(defaultUrl),
   title: "Worst Indian colleges",
@@ -20,14 +20,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={GeistSans.className} suppressHydrationWarning>
-      <head>
-        {/* <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" /> */}
-        <meta name="description" content={metadata.description} />
-        <title>{metadata.title}</title>
-        {/* <link rel="icon" href="/cat-favicon.png" type="image/png" /> */}
-
-      </head>
       <body className="bg-background text-foreground">
       <ThemeProvider
             attribute="class"
