@@ -10,7 +10,7 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata = {
   metadataBase: new URL(defaultUrl),
   title: "Worst Indian colleges",
-  description: "A rank list of the worst colleges of india",
+  description: "A rank list of the worst colleges of India",
 };
 
 export default function RootLayout({
