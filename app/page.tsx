@@ -158,19 +158,20 @@ export default function CollegeList() {
   }
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div className="w-full h-1  bg-gradient-to-br from-purple-700 via-purple-500 to-yellow-400">
+      </div>
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-8 font-sans">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">WORST INDIAN COLLEGES</h1>
+          <h1 className="text-3xl font-bold font-mono">WORST INDIAN COLLEGES</h1>
           <Button onClick={toggleTheme} variant="outline" size="icon">
             {theme === "dark" ? <Sun className="h-[1.2rem] w-[1.2rem]" /> : <Moon className="h-[1.2rem] w-[1.2rem]" />}
           </Button>
         </div>
-        <h3 className="text-lg font-medium mb-4 text-center">Vote for which is the WORST indian college out there. Click the search bar, search your college and HIT the VOTE BUTTON</h3>
+        <h3 className="text-xl font-medium mb-4 text-left animate-text bg-gradient-to-r from-teal-500 via-purple-500 to-orange-500 bg-clip-text text-transparent text-5xl font-black">Vote for which is the WORST indian college out there. Click the search bar, search your college and HIT the VOTE BUTTON</h3>
         <div className="mb-8 flex gap-4">
           <Input
             type="text"

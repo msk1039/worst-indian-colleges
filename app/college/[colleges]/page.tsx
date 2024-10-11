@@ -104,7 +104,11 @@ export default function CollegeDetail() {
   }
 
   if (loading) {
-    return <div>Loading...</div>
+    return <>
+    <div className="w-full h-1   bg-gradient-to-br from-purple-700 via-purple-500 to-yellow-400">
+      </div>
+
+    </>
   }
 
   if (!college) {
@@ -112,7 +116,7 @@ export default function CollegeDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8 font-sans">
+    <div className="min-h-screen bg-background text-foreground p-8 font-sans ">
       <div className="max-w-2xl mx-auto">
         <Link href="/" className="text-primary hover:underline mb-4 inline-block">
           &larr; Back to list
@@ -122,7 +126,7 @@ export default function CollegeDetail() {
         <Button
           onClick={handleVote}
           disabled={!canVote()}
-          className="w-full"
+          className="w-full "
         >
           <ThumbsUp className="mr-2 h-4 w-4" />
           Vote for this College
