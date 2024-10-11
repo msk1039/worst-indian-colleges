@@ -1,24 +1,16 @@
 // app/[colleges]/page.tsx
-"use client";
+// app/page.tsx
+"use client"
 
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUpDown, ThumbsUp, TrendingDown, TrendingUp, Sun, Moon } from "lucide-react";
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
-import { fetchColleges } from './api/fetchColleges';
-import { writeCollege } from './api/writeCollege';
-import { useTheme } from "next-themes";
-
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from "react"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ArrowUpDown, Sun, Moon } from "lucide-react"
+import { Toaster } from "@/components/ui/toaster"
+import Link from "next/link"
+import { useTheme } from "next-themes"
 
 import {
   Pagination,
@@ -28,188 +20,219 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
+} from "@/components/ui/pagination"
 
-export default function EnhancedCollegeVotingApp() {
-  interface College {
-    id: number;
-    name: string;
-    votes: number;
-    rank: number;
-  }
-
-  let [colleges, setColleges] = useState<College[]>([]);
-  let [currentColleges, setCurrentColleges] = useState<College[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOrder, setSortOrder] = useState("desc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const collegesPerPage = 100; // Updated to 100
-  const { toast } = useToast();
-  const { theme, setTheme } = useTheme();
-
-  useEffect(() => {
-    const getColleges = async () => {
-      const data = await fetchColleges();
-      setColleges(data);
-      localStorage.setItem('colleges', JSON.stringify(data));
-    };
-
-    getColleges();
-  }, []);
-
-  // useEffect(() => {
-  //   const storedColleges = localStorage.getItem('colleges');
-  //   if (storedColleges) {
-  //     setColleges(JSON.parse(storedColleges));
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   localStorage.setItem('colleges', JSON.stringify(colleges));
-  // }, [colleges]);
-
- 
-
-  const reverseColleges = (colleges: any) => {
-    return [...colleges].reverse();
-  };
-
-  const handleSort = () => {
-    setSortOrder(prevOrder => prevOrder === "asc" ? "desc" : "asc");
-  };
-
-
-
-
-
-  // useEffect(() => {
-  //   localStorage.setItem('currentColleges', JSON.stringify(currentColleges));
-  // }, [currentColleges]);
-
-  // update current colleges by sorting them with their votes update their rank
-  // useEffect(() => {
-    colleges = JSON.parse(localStorage.getItem('colleges') || '[]');
-    let sortedColleges = [...colleges].sort((a, b) => b.votes - a.votes);
-    sortedColleges = sortedColleges.map((college, index) => ({ ...college, rank: index + 1 }));
-    // setCurrentColleges(sortedColleges);
-    // currentColleges = sortedColleges;
-    colleges = sortedColleges;
-    console.log("current colleges sorted")
-    // console.log(colleges)
-  //   localStorage.setItem('currentColleges', JSON.stringify(currentColleges));
-  //   console.log("current colleges updated")
-  // }, [localStorage.getItem('currentColleges')]); 
-
-  const filteredColleges = (sortOrder === "desc" ? colleges : reverseColleges(colleges)).filter((college) =>
-    college.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const indexOfLastCollege = currentPage * collegesPerPage;
-  const indexOfFirstCollege = indexOfLastCollege - collegesPerPage;
-  currentColleges = filteredColleges.slice(indexOfFirstCollege, indexOfLastCollege);
-  console.log("page updated")
-
-
-
-
-
-  
-
-
-
-
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
-
-
-  const totalPages = Math.ceil(filteredColleges.length / collegesPerPage);
-
-  const getPaginationItems = (currentPage: number, totalPages: number) => {
-    const paginationItems = [];
-
-    if (totalPages <= 3) {
-        for (let i = 1; i <= totalPages; i++) {
-            paginationItems.push(i);
-        }
-    } else {
-        if (currentPage > 2) {
-            paginationItems.push('...');
-        }
-
-        const startPage = Math.max(1, currentPage - 1);
-        const endPage = Math.min(totalPages, currentPage + 1);
-
-        for (let i = startPage; i <= endPage; i++) {
-            paginationItems.push(i);
-        }
-
-        if (currentPage < totalPages - 1) {
-            paginationItems.push('...');
-        }
-    }
-
-    return paginationItems;
-};
-
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  setCurrentPage: (page: number) => void;
+interface College {
+  id: number
+  name: string
+  votes: number
+  rank?: number
 }
 
-const PaginationList = ({ currentPage, totalPages, setCurrentPage }: PaginationProps) => {
-    const paginationItems = getPaginationItems(currentPage, totalPages);
+export default function CollegeList() {
+  const [colleges, setColleges] = useState<College[]>([])
+  const [currentColleges, setCurrentColleges] = useState<College[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortOrder, setSortOrder] = useState("desc")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [loading, setLoading] = useState(true)
+  const collegesPerPage = 20
+  const { theme, setTheme } = useTheme()
+  const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    const fetchColleges = async () => {
+      const { data, error } = await supabase.from('colleges-t2').select('*')
+      if (error) {
+        console.error('Error fetching colleges:', error)
+      } else {
+        setColleges(data || [])
+        setLoading(false)
+      }
+    }
+
+    fetchColleges()
+
+    const channel = supabase
+      .channel('colleges-changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'colleges-t2' }, payload => {
+        setColleges(prevColleges => 
+          prevColleges.map(college => 
+            college.id === payload.new.id ? { ...college, ...payload.new } : college
+          )
+        )
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    const sortedColleges = [...colleges].sort((a, b) => b.votes - a.votes)
+    const rankedColleges = sortedColleges.map((college, index) => ({ ...college, rank: index + 1 }))
+    const filteredColleges = rankedColleges.filter((college) =>
+      college.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    const sortedFilteredColleges = sortOrder === "desc" ? filteredColleges : [...filteredColleges].reverse()
+    const indexOfLastCollege = currentPage * collegesPerPage
+    const indexOfFirstCollege = indexOfLastCollege - collegesPerPage
+    setCurrentColleges(sortedFilteredColleges.slice(indexOfFirstCollege, indexOfLastCollege))
+  }, [colleges, searchTerm, sortOrder, currentPage])
+
+  const handleSort = () => {
+    setSortOrder(prevOrder => prevOrder === "asc" ? "desc" : "asc")
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
+
+  const totalPages = Math.ceil(colleges.length / collegesPerPage)
+
+  const getPaginationItems = (currentPage: number, totalPages: number) => {
+    const paginationItems = []
+
+    if (totalPages <= 3) {
+      for (let i = 1; i <= totalPages; i++) {
+        paginationItems.push(i)
+      }
+    } else {
+      if (currentPage > 2) {
+        paginationItems.push('...')
+      }
+
+      const startPage = Math.max(1, currentPage - 1)
+      const endPage = Math.min(totalPages, currentPage + 1)
+
+      for (let i = startPage; i <= endPage; i++) {
+        paginationItems.push(i)
+      }
+
+      if (currentPage < totalPages - 1) {
+        paginationItems.push('...')
+      }
+    }
+
+    return paginationItems
+  }
+
+  const PaginationList = ({ currentPage, totalPages, setCurrentPage }: {
+    currentPage: number
+    totalPages: number
+    setCurrentPage: (page: number) => void
+  }) => {
+    const paginationItems = getPaginationItems(currentPage, totalPages)
 
     return (
-        // <div className="flex overflow-x-auto">
-        <>
+      <>
         <PaginationItem>
-                {/* <PaginationLink onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}>
-                    Previous
-                </PaginationLink> */}
-                <PaginationPrevious
-                    onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-            </PaginationItem>
-            {paginationItems.map((item, index) => (
-                <PaginationItem key={index}>
-                    {item === '...' ? (
-                        <PaginationEllipsis onClick={() => (index===0)? setCurrentPage(1) : setCurrentPage(totalPages-1) }/>
-                    ) : (
-                        <PaginationLink
-                            onClick={() => typeof item === 'number' && setCurrentPage(item)}
-                            isActive={currentPage === item}
-                        >
-                            {item}
-                        </PaginationLink>
-                    )}
-                </PaginationItem>
-            ))}
-            <PaginationItem>
-                {/* <PaginationLink onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                    Next
-                </PaginationLink> */}
-                <PaginationNext
-                    onClick={() => setCurrentPage(Math.min(Math.ceil(filteredColleges.length / collegesPerPage), currentPage + 1))}
-                    className={currentPage === Math.ceil(filteredColleges.length / collegesPerPage) ? "pointer-events-none opacity-50" : ""}
-                  />
-            </PaginationItem>
-        </>
-            
-        // </div>
-    );
-};
+          <PaginationPrevious
+            onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+          />
+        </PaginationItem>
+        {paginationItems.map((item, index) => (
+          <PaginationItem key={index}>
+            {item === '...' ? (
+              <PaginationEllipsis onClick={() => (index === 0) ? setCurrentPage(1) : setCurrentPage(totalPages - 1)} />
+            ) : (
+              <PaginationLink
+                onClick={() => typeof item === 'number' && setCurrentPage(item)}
+                isActive={currentPage === item}
+              >
+                {item}
+              </PaginationLink>
+            )}
+          </PaginationItem>
+        ))}
+        <PaginationItem>
+          <PaginationNext
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+          />
+        </PaginationItem>
+      </>
+    )
+  }
 
-// Usage
-
-
+  if (loading) {
+    return <div>Loading...</div>
+  }
 
   return (
-    // <div className="min-h-screen bg-yellow-300 p-8 font-mono">
+    <div className="min-h-screen bg-background text-foreground p-8 font-sans">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">WORST INDIAN COLLEGES</h1>
+          <Button onClick={toggleTheme} variant="outline" size="icon">
+            {theme === "dark" ? <Sun className="h-[1.2rem] w-[1.2rem]" /> : <Moon className="h-[1.2rem] w-[1.2rem]" />}
+          </Button>
+        </div>
+        <h3 className="text-lg font-medium mb-4 text-center">Vote for which is the WORST indian college out there. Click the search bar, search your college and HIT the VOTE BUTTON</h3>
+        <div className="mb-8 flex gap-4">
+          <Input
+            type="text"
+            placeholder="Search for a college..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-grow"
+          />
+          <Button onClick={handleSort} variant="outline">
+            Sort
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Rank</TableHead>
+                <TableHead>College Name</TableHead>
+                <TableHead className="text-right">Votes</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentColleges.map((college) => (
+                <TableRow key={college.id} className="transition-colors hover:bg-muted/50 cursor-pointer">
+                  <TableCell className="font-medium">{college.rank}</TableCell>
+                  <TableCell>
+                    <Link href={`/college/${college.id}`} className="hover:underline hover:text-primary">
+                      {college.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-right">{college.votes}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="mt-4 flex justify-center overflow-x-auto">
+          <Pagination>
+            <PaginationContent>
+              <PaginationList currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} />
+            </PaginationContent>
+          </Pagination>
+        </div>
+      </div>
+      <Toaster />
+    </div>
+  )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+ // <div className="min-h-screen bg-yellow-300 p-8 font-mono">
     //   <div className="max-w-4xl mx-auto">
     //     <h1 className="text-5xl font-black text-center mb-8 text-blue-900 transform ">
     //       Indian College Voter
@@ -306,99 +329,3 @@ const PaginationList = ({ currentPage, totalPages, setCurrentPage }: PaginationP
     //   </div>
     //   <Toaster />
     // </div>
-    <>
-    <div className="min-h-screen bg-background text-foreground p-8 font-sans">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold">WORST INDIAN COLLEGES</h1>
-            
-            <Button onClick={toggleTheme} variant="outline" size="icon">
-              {theme === "dark" ? <Sun className="h-[1.2rem] w-[1.2rem]" /> : <Moon className="h-[1.2rem] w-[1.2rem]" />}
-            </Button>
-          </div>
-          <h3 className="text-lg font-medium mb-4 text-center">Vote for which is the WORST indian college out there . Click the search bar , search your college and HIT the VOTE BUTTON</h3>
-          <div className="mb-8 flex gap-4">
-            <Input
-              type="text"
-              placeholder="Search for a college..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-grow"
-            />
-            <Button onClick={handleSort} variant="outline">
-              Sort
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-          <div className="border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Rank</TableHead>
-                  <TableHead>College Name</TableHead>
-                  <TableHead className="text-right">Votes</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentColleges.map((college) => (
-                  <TableRow key={college.id} className="transition-colors hover:bg-muted/50 cursor-pointer">
-                    <TableCell className="font-medium">{college.rank}</TableCell>
-                    <TableCell>
-                      <Link href={`/college/${college.id}`} className="hover:underline hover:text-primary">
-                        {college.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right">{college.votes}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="mt-4 flex justify-center overflow-x-auto">
-          {/* <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                <div className="flex overflow-x-auto">
-                  {Array.from({ length: Math.ceil(filteredColleges.length / collegesPerPage) }, (_, i) => (
-                    <PaginationItem key={i}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(i + 1)}
-                        isActive={currentPage === i + 1}
-                      >
-                        {i + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                </div>
-                <PaginationItem>
-                  <PaginationEllipsis />
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(filteredColleges.length / collegesPerPage), prev + 1))}
-                    className={currentPage === Math.ceil(filteredColleges.length / collegesPerPage) ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination> */}
-            <Pagination>
-            <PaginationContent>
-            <PaginationList currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} />
-            </PaginationContent>
-            </Pagination>
-          </div>
-        </div>
-        <Toaster />
-      </div>
-    </>
-  )
-}
-
-
-
-
